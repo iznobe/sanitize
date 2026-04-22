@@ -97,7 +97,7 @@ sanitize() {
         fi
       else
         if [[ "$name" == *.* ]]; then
-          ext="${name##*.}"
+          ext=".${name##*.}"
           base="${name%.*}"
         fi
       fi
@@ -107,8 +107,8 @@ sanitize() {
       ((suffix++))
     done
     
-    echo " => '$1' serait renommé en '$final_name'"
-    #mv -v "$1"  "$final_name"
+    #echo " => '$1' serait renommé en '$final_name'"
+    mv -v "$1"  "$final_name"
   fi
 }
 
@@ -116,7 +116,8 @@ export -f sanitize
 
 sanitize_dir() {
   Debut=$(date +%s);
-  find "$1" -depth -exec bash -c 'sanitize "$0"' {} \;
+  find "$1" -type d -exec bash -c 'sanitize "$0"' {} \;
+  find "$1" -type f -exec bash -c 'sanitize "$0"' {} \;
   echo "le tout en $(($(date +%s)-Debut)) secondes."
 }
 
