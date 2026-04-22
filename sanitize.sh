@@ -55,8 +55,6 @@ export -f sanitize
 
 sanitize_dir() {
   Debut=$(date +%s);
-  #find "$1" -type d -exec bash -c 'sanitize "$0"' {} \;
-  #find "$1" -type f -exec bash -c 'sanitize "$0"' {} \;
   find "$1" -depth -exec bash -c 'sanitize "$0"' {} \;
   echo "le tout en $(($(date +%s)-Debut)) secondes."
 }
