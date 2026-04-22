@@ -18,7 +18,7 @@ sanitize() {
   s/^(nul|prn|con|lpt[0-9]|com[0-9]|aux|COM¹|COM²|COM³|LPT¹|LPT²|LPT³)(\.|$)/\1_\2/I  # si nom exclu on ajoute le suffixe _
   s/^[[:space:]]*$/NONAME/' <<< "$filename")  # si espace ou vide => NONAME
   
-  if test "$filename" != "$name_clean" test; then
+  if test "$filename" != "$name_clean"; then
     suffix=0
     final_name="$directory/$name_clean"
     
