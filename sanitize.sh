@@ -25,20 +25,23 @@ sanitize() {
     # eviter les doublons et renommer correctement quand meme :
     while test -e "$final_name"; do # Tant que le fichier cible existe déjà
       name="${name_clean##*/}"   # enlève le chemin
+      base="$name"
       ext=""
 
       if [[ "$name" == .* ]]; then
         base="${name:1}"   # enlève le point initial
         if [[ "$base" == *.* ]]; then
           ext="${base##*.}"
+          base="${base%.*}"
         fi
       else
         if [[ "$name" == *.* ]]; then
           ext="${name##*.}"
+          base="${name%.*}"
         fi
       fi
       # Permet de renommer le tout ( les 4 possibilités ) , car $ext est definie a vide au départ
-      final_name="${directory}/${name}_${suffix}${ext}"
+      final_name="${directory}/${base}_${suffix}${ext}"
 
       ((suffix++))
     done
