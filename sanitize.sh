@@ -47,7 +47,7 @@ sanitize() {
     done
     
     echo " => '$1' serait renommé en '$final_name'"
-    mv -v "$1"  "$final_name" >> /tmp/sanitize.log
+    mv -v "$1"  "$final_name"
   fi
 }
 
