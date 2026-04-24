@@ -46,7 +46,7 @@ sanitize() {
       ((suffix++))
     done
     
-    echo " => '$1' serait renommé en '$final_name'"
+    #echo " => '$1' serait renommé en '$final_name'"
     mv -v "$1"  "$final_name"
   fi
 }
