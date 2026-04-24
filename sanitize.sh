@@ -31,12 +31,12 @@ sanitize() {
       if [[ "$name" == .* ]]; then
         base="${name:1}"   # enlève le point initial
         if [[ "$base" == *.* ]]; then
-          ext="${base##*.}"
+          ext=".${base##*.}"
           base="${base%.*}"
         fi
       else
         if [[ "$name" == *.* ]]; then
-          ext="${name##*.}"
+          ext=".${name##*.}"
           base="${name%.*}"
         fi
       fi
