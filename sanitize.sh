@@ -1,56 +1,93 @@
 #!/bin/bash
 
 sanitize() {
-  shopt -s extglob;
+  shopt -s extglob
 
-  filename=$(basename "$1")
-  directory=$(dirname "$1")
+  filename=${1##*/}
+  directory=${1%/*}
 
-  name_clean=$(sed -E '
-  s/^[[:space:]]*//                           # Suppression des espaces en début de ligne
-  s/[[:space:]]*$//                           # Suppression des espaces en fin de ligne
-  s/[[:space:]]*\/[[:space:]]*/\//g           # Remplace toute séquence d espaces autour d une barre oblique (/) par une seule barre oblique
-  s/[[:space:]]+/ /g                          # Remplacement des espaces multiples par un seul espace
-  s/['\''\\/:\*\?\"<>\|\x01-\x1F\x7F]/_/g     # Remplacement des apostrophes et des caractères interdits par des underscores
-  s/\.+$//                                    # Suppression des points en fin de nom
-  s/[[:space:]]*\.[[:space:]]*([^.]+)$/.\1/   # Suppression des espaces juste avant et / ou apres le dernier point
-  s/^\.*$//                                   # Suppression des noms ne contenant que des points
-  s/^(nul|prn|con|lpt[0-9]|com[0-9]|aux|COM¹|COM²|COM³|LPT¹|LPT²|LPT³)(\.|$)/\1_\2/I  # si nom exclu on ajoute le suffixe _
-  s/^[[:space:]]*$/NONAME/' <<< "$filename")  # si espace ou vide => NONAME
-  
+  name_clean=$(
+  printf '%s' "$filename" |
+  awk '
+  BEGIN {
+    IGNORECASE = 1
+
+    reserved["nul"]; reserved["prn"]; reserved["con"]; reserved["aux"]
+    for (i=0;i<=9;i++) { reserved["com" i]; reserved["lpt" i] }
+    reserved["com¹"]; reserved["com²"]; reserved["com³"]
+    reserved["lpt¹"]; reserved["lpt²"]; reserved["lpt³"]
+  }
+  {
+    # trim
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+
+    # espaces autour /
+    gsub(/[[:space:]]*\/[[:space:]]*/, "/")
+
+    # espaces multiples
+    gsub(/[[:space:]]+/, " ")
+
+    # caractères interdits + contrôle
+    gsub(/['\''\\/:\*\?\"<>\|\001-\037\177]/, "_")
+
+    # suppression points finaux
+    sub(/\.+$/, "")
+
+    # nettoyage dernier point (backreference awk OK)
+    if (match($0, /[[:space:]]*\.[[:space:]]*([^.]+)$/)) {
+      ext = substr($0, RSTART, RLENGTH)
+      sub(/^[[:space:]]*\.[[:space:]]*/, ".", ext)
+      $0 = substr($0, 1, RSTART-1) ext
+    }
+
+    # uniquement des points → vide
+    if ($0 ~ /^\.*$/) $0=""
+
+    # basename sans extension
+    base = $0
+    sub(/\..*$/, "", base)
+
+    if (tolower(base) in reserved) {
+      $0 = base "_" substr($0, length(base)+1)
+    }
+
+    # vide → NONAME
+    if ($0 ~ /^[[:space:]]*$/) $0="NONAME"
+
+    print
+  }'
+)
+
   if test "$filename" != "$name_clean"; then
     suffix=0
     final_name="$directory/$name_clean"
-    
-    # eviter les doublons et renommer correctement quand meme :
-    while test -e "$final_name"; do # Tant que le fichier cible existe déjà
-      name="${name_clean##*/}"   # enlève le chemin
-      base="$name"
-      ext=""
 
-      if [[ "$name" == .* ]]; then
-        base="${name:1}"   # enlève le point initial
-        if [[ "$base" == *.* ]]; then
-          ext=".${base##*.}"
-          base="${base%.*}"
-        fi
-      else
-        if [[ "$name" == *.* ]]; then
-          ext=".${name##*.}"
-          base="${name%.*}"
-        fi
+    name="${name_clean##*/}"
+    base="$name"
+    ext=""
+
+    if [[ "$name" == .* ]]; then
+      base="${name:1}"
+      if [[ "$base" == *.* ]]; then
+        ext="${base##*.}"
+        base="${base%.*}"
       fi
-      # Permet de renommer le tout ( les 4 possibilités ) , car $ext et $base sont definies au départ
-      final_name="${directory}/${base}_${suffix}${ext}"
+    else
+      if [[ "$name" == *.* ]]; then
+        ext="${name##*.}"
+        base="${name%.*}"
+      fi
+    fi
 
+    while test -e "$final_name"; do
+      final_name="${directory}/${base}_${suffix}${ext}"
       ((suffix++))
     done
-    
-    #echo " => '$1' serait renommé en '$final_name'"
-    mv -v "$1"  "$final_name"
+
+    echo " => '$1' serait renommé en '$final_name'"
+    #mv -v "$1" "$final_name" >> /tmp/sanitize.log
   fi
 }
-
 export -f sanitize
 
 sanitize_dir() {
